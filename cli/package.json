@@ -1,0 +1,39 @@
+{
+  "name": "mediaengine",
+  "version": "0.1.0",
+  "description": "CLI for MediaEngine — MCP image/video generation tools for Claude, Cursor, and terminal workflows",
+  "keywords": [
+    "mediaengine",
+    "mcp",
+    "image-generation",
+    "video-generation",
+    "claude",
+    "cursor",
+    "ai-tools",
+    "media-tools",
+    "mcp-server",
+    "llm-tools"
+  ],
+  "homepage": "https://mcpmediaengine.com",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "media-engine": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.41",
+    "typescript": "^5.9.3"
+  }
+}

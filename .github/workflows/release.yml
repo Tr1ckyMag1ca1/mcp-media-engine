@@ -1,0 +1,257 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+      pre-release:
+        description: 'Is this a pre-release?'
+        required: true
+        type: boolean
+        default: 'false'
+
+permissions:
+  contents: read
+  actions: read
+  issues: read
+  pull-requests: read
+  id-token: write  # for npm provenance
+  packages: write  # for npm publishing
+
+jobs:
+  release:
+    name: Create Release and Publish to npm
+    runs-on: ubuntu-latest
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      published: ${{ steps.publish.outputs.published }}
+      release-url: ${{ steps.release.outputs.html_url }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build MCP server
+        run: npm run build
+
+      - name: Build CLI
+        run: |
+          cd cli
+          npm install --include=dev
+          npm run build
+        working-directory: .
+
+      - name: Verify build
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Build failed - dist directory not found"
+            exit 1
+          fi
+          if [ ! -d "cli/dist" ]; then
+            echo "Build failed - cli/dist directory not found"
+            exit 1
+          fi
+          echo "Build verification completed"
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${{ github.ref_name }}"
+          elif [ "${{ github.event_name }}" = "release" ] && [ "${{ github.event.release.tag_name }}" != "" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            echo "Error: Cannot determine version from event: ${{ github.event_name }}"
+            exit 1
+          fi
+          
+          # Validate version format
+          if [[ ! "$VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z0-9-]+(\.[0-9]+)?)?$ ]]; then
+            echo "Error: Invalid version format: $VERSION"
+            exit 1
+          fi
+          
+          # Add 'v' prefix if missing
+          if [[ ! "$VERSION" =~ ^v ]]; then
+            VERSION="v$VERSION"
+          fi
+          
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # Strip v prefix for npm-compatible version
+          NPM_VERSION="${VERSION#v}"
+          echo "npm_version=$NPM_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Release version: $VERSION (npm: $NPM_VERSION)"
+
+      - name: Update package.json versions
+        run: |
+          # Update version in main package.json (use npm_version without v prefix)
+          jq --arg version "${{ steps.version.outputs.npm_version }}" '.version = $version' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          
+          # Update version in CLI package.json
+          jq --arg version "${{ steps.version.outputs.npm_version }}" '.version = $version' cli/package.json > cli/package.json.tmp
+          mv cli/package.json.tmp cli/package.json
+          
+          # Verify the changes
+          echo "Updated main package.json version:"
+          cat package.json | grep '"version"'
+          echo "Updated cli/package.json version:"
+          cat cli/package.json | grep '"version"'
+
+      - name: Create release commit
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.json cli/package.json
+          git commit -m "Release ${{ steps.version.outputs.npm_version }}" || echo "No changes to commit"
+          git tag -f "${{ steps.version.outputs.version }}" || git tag "${{ steps.version.outputs.version }}"
+
+      - name: Publish to npm
+        id: publish
+        run: |
+          echo "Publishing ${{ steps.version.outputs.version }} to npm..."
+          
+          # Publish main MCP server package
+          npm publish --provenance --access public
+          echo "Published mcp-media-engine"
+          
+          # Publish CLI package
+          cd cli
+          npm publish --provenance --access public
+          echo "Published mediaengine CLI"
+          
+          echo "published=true" >> "$GITHUB_OUTPUT"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Push changes and tag
+        run: |
+          git push
+          git push --tags
+
+      - name: Create GitHub Release
+        id: release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## Release ${{ steps.version.outputs.version }}
+            
+            This release contains the following changes:
+            
+            ### 🚀 Features
+            - MCP server for async media generation
+            - Support for images, videos, and audio generation
+            - Built-in job polling and status tracking
+            
+            ### 📦 Installation
+            ```bash
+            npm install -g mcp-media-engine
+            ```
+            
+            ### 🔧 Usage
+            See the [documentation](https://mcpmediaengine.com/docs/mcp) for detailed usage instructions.
+            
+            ### 📄 License
+            Proprietary - See [license](https://mcpmediaengine.com/license) for details.
+            
+            ---
+            *This release was automatically created by GitHub Actions*
+          draft: false
+          prerelease: ${{ github.event.inputs.pre-release == 'true' || contains(steps.version.outputs.version, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update development version
+        if: steps.publish.outputs.published == 'true'
+        run: |
+          # Calculate next version (patch by default)
+          CURRENT_VERSION="${{ steps.version.outputs.version }}"
+          if [[ "$CURRENT_VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z0-9-]+(\.[0-9]+)?)?$ ]]; then
+            # Extract major, minor, patch
+            MAJOR=$(echo "$CURRENT_VERSION" | sed 's/^v//' | cut -d. -f1)
+            MINOR=$(echo "$CURRENT_VERSION" | sed 's/^v//' | cut -d. -f2)
+            PATCH=$(echo "$CURRENT_VERSION" | sed 's/^v//' | cut -d. -f3 | cut -d- -f1)
+            
+            # Next patch version
+            NEXT_PATCH=$((PATCH + 1))
+            NEXT_VERSION="v$MAJOR.$MINOR.$NEXT_PATCH"
+            
+            echo "Development version: $NEXT_VERSION"
+            
+            # Update main package.json with development version
+            jq --arg version "$NEXT_VERSION" '.version = $version' package.json > package.json.tmp
+            mv package.json.tmp package.json
+            
+            # Update CLI package.json with development version
+            jq --arg version "$NEXT_VERSION" '.version = $version' cli/package.json > cli/package.json.tmp
+            mv cli/package.json.tmp cli/package.json
+            
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add package.json cli/package.json
+            git commit -m "Prepare for next development cycle: $NEXT_VERSION"
+            git push
+            
+            echo "Updated to development version: $NEXT_VERSION"
+          fi
+
+  publish-prerelease:
+    name: Publish Prerelease to npm
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    
+    steps:
+      - name: Publish to npm registry
+        run: |
+          echo "Publishing prerelease version..."
+          npm publish --tag next --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  notify:
+    name: Notify release completion
+    runs-on: ubuntu-latest
+    needs: [release, publish-prerelease]
+    if: always()
+    
+    steps:
+      - name: Send notification
+        run: |
+          echo "=== Release Summary ==="
+          echo "Version: ${{ needs.release.outputs.version }}"
+          echo "Published: ${{ needs.release.outputs.published }}"
+          echo "Release URL: ${{ needs.release.outputs.release-url }}"
+          echo "Status: ${{ needs.notify.result }}"
+          
+          if [ "${{ needs.release.outputs.published }}" = "true" ]; then
+            echo "✅ Release completed successfully!"
+          else
+            echo "❌ Release failed!"
+            exit 1
+          fi

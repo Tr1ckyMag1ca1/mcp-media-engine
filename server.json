@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Tr1ckyMag1ca1/mediaengine",
+  "title": "MediaEngine",
+  "description": "AI image, video, and audio generation for MCP \u2014 one API key, every model, wiring never changes.",
+  "repository": {
+    "url": "https://github.com/Tr1ckyMag1ca1/mcp-media-engine",
+    "source": "github"
+  },
+  "version": "1.0.3",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "mcp-media-engine",
+      "version": "1.0.3",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MEDIAENGINE_API_KEY",
+          "description": "Your MediaEngine API key (sign up at mcpmediaengine.com)",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "MEDIAENGINE_BASE_URL",
+          "description": "MediaEngine API base URL",
+          "isRequired": true,
+          "format": "string",
+          "default": "https://api.mcpmediaengine.com"
+        }
+      ]
+    }
+  ]
+}

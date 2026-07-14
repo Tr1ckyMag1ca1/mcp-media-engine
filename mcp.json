@@ -1,0 +1,180 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schema/server-manifest.json",
+  "name": "MediaEngine",
+  "displayName": "MediaEngine – AI Image, Video & Audio Generation (MCP)",
+  "version": "1.0.0",
+  "description": "Generate images, videos, and audio using AI — Nano Banana, GPT Image 2.0, Seedance and Hailuo video, text-to-image, text-to-video, and text-to-speech — directly from Claude, Cursor, or any MCP-compatible agent. Supports text-to-image generation, style prompting, branded output, editorial hero images, email banners, social media graphics, teaser videos, article narrations, and podcast audio. Intent-specific tools let Claude automatically pick the right format, aspect ratio, and style — no prompt engineering needed. Async job processing with polling and status tracking.",
+  "homepage": "https://mcpmediaengine.com",
+  "documentation": "https://mcpmediaengine.com/docs/mcp",
+  "license": "Proprietary",
+  "categories": [
+    "media",
+    "images",
+    "video",
+    "audio",
+    "content-creation",
+    "developer-tools"
+  ],
+  "tags": [
+    "image_generation",
+    "dalle",
+    "dall-e",
+    "openai-images",
+    "chatgpt-images",
+    "text-to-image",
+    "ai-image-generation",
+    "ai-art",
+    "text-to-video",
+    "text-to-speech",
+    "video_generation",
+    "audio_generation",
+    "tts",
+    "content_media",
+    "editorial_hero_image",
+    "blog",
+    "newsletter",
+    "email",
+    "social_media",
+    "audio",
+    "narration",
+    "podcast",
+    "async",
+    "publishing",
+    "content-creation",
+    "mcp-server",
+    "claude",
+    "cursor"
+  ],
+  "tools": [
+    {
+      "name": "generate_article_hero_image",
+      "description": "Generate a hero banner image for a blog post, article, or editorial page. Creates an AI-generated visual from the title and summary — ideal for CMS hero banners, newsletter headers, and article thumbnails. Supports brand style hints and reference images.",
+      "inputRequired": []
+    },
+    {
+      "name": "generate_email_header_image",
+      "description": "Create an AI-generated header image for marketing emails and newsletters. Optimized for wide-format email banners from subject line and body text. Accepts tone and brand style hints for on-brand visuals.",
+      "inputRequired": []
+    },
+    {
+      "name": "generate_social_teaser_image",
+      "description": "Create a social media teaser image optimized for LinkedIn, Twitter/X, Instagram, or Substack. Auto-selects the best aspect ratio and generates a visual from article or post content.",
+      "inputRequired": []
+    },
+    {
+      "name": "generate_article_teaser_video",
+      "description": "Create a short AI-generated teaser video (15–30s) from an article summary or social post. Produces a shareable video for driving traffic from video-first platforms like YouTube Shorts, TikTok, and Instagram Reels.",
+      "inputRequired": []
+    },
+    {
+      "name": "generate_article_narration",
+      "description": "Generate audio narration of article or blog post content using text-to-speech. Creates podcast-style audio, accessibility voiceovers, and audio newsletters. Supports multiple voices and playback speeds.",
+      "inputRequired": []
+    },
+    {
+      "name": "generate_image",
+      "description": "Generate an image from a text prompt — AI image generation via the MediaEngine model catalog (nano-banana, gpt-image-2, and more). Use this for any image creation request: illustrations, photos, art, logos, icons, graphics, or visuals. Accepts prompt, size, model, and style overrides.",
+      "inputRequired": ["prompt"]
+    },
+    {
+      "name": "generate_audio",
+      "description": "Generate audio from text using text-to-speech (TTS) synthesis. Create voiceovers, narrations, podcast audio, or any spoken audio from text input. Supports multiple voices, formats (MP3, FLAC, AAC, Opus), and playback speeds.",
+      "inputRequired": ["text"]
+    },
+    {
+      "name": "generate_video",
+      "description": "Generate a video from parameters using AI video generation. Use this for any video creation request when the intent-specific video tools don't fit. Accepts provider-specific generation parameters directly.",
+      "inputRequired": ["inputParams"]
+    },
+    {
+      "name": "wait_for_job",
+      "description": "Wait for a media generation job to complete. Polls the job until it finishes or times out — use this to get the final image, video, or audio result without manually checking status in a loop.",
+      "inputRequired": ["jobId"]
+    },
+    {
+      "name": "get_job_status",
+      "description": "Check the status of an image, video, or audio generation job. Returns the current state (queued, processing, done, failed) and the result URL when complete.",
+      "inputRequired": ["jobId"]
+    },
+    {
+      "name": "list_jobs",
+      "description": "List all media generation jobs — images, videos, and audio — with filtering by status, type, and date. Supports sorting and cursor-based pagination.",
+      "inputRequired": []
+    }
+  ],
+  "install": {
+    "npm": {
+      "package": "mcp-media-engine",
+      "command": "npx",
+      "args": ["-y", "mcp-media-engine"],
+      "env": {
+        "MEDIAENGINE_API_KEY": {
+          "description": "Your MediaEngine API key (me_live_... or me_test_...)",
+          "required": true
+        },
+        "MEDIAENGINE_BASE_URL": {
+          "description": "Override the API base URL. Defaults to https://api.mcpmediaengine.com",
+          "required": false
+        }
+      }
+    }
+  },
+  "claudeDesktopConfig": {
+    "mcpServers": {
+      "mediaengine": {
+        "command": "npx",
+        "args": ["-y", "mcp-media-engine"],
+        "env": {
+          "MEDIAENGINE_API_KEY": "me_live_your_key_here"
+        }
+      }
+    }
+  },
+  "useCases": [
+    "Generate hero images, featured images, and thumbnails for blog posts and articles",
+    "Create header images and banners for marketing emails and newsletters",
+    "Produce social media images for LinkedIn, Twitter/X, Instagram, and Substack",
+    "Create short teaser videos for article promotion and social sharing",
+    "Generate audio narrations, podcast episodes, and voiceovers from text",
+    "Generate images from text prompts — illustrations, photos, AI art, graphics",
+    "Convert text to speech for accessibility, audio newsletters, and podcasts",
+    "Automate media production in content pipelines and publishing workflows"
+  ],
+  "searchQueries": [
+    "generate images with AI",
+    "AI image generation MCP",
+    "DALL-E MCP server",
+    "text to image MCP",
+    "generate blog images",
+    "create social media images",
+    "AI video generation",
+    "text to speech MCP",
+    "MCP server for image generation",
+    "Claude image generation tool",
+    "MCP tool for article hero images",
+    "generate images from article titles",
+    "editorial image generation MCP",
+    "newsletter header image generator",
+    "podcast audio generation MCP"
+  ],
+  "pricing": "plans",
+  "authentication": "api_key",
+  "transport": ["stdio"],
+  "publisher": {
+    "name": "MediaEngine",
+    "email": "hello@mcpmediaengine.com",
+    "url": "https://mcpmediaengine.com"
+  },
+  "support": {
+    "email": "support@mcpmediaengine.com",
+    "url": "https://mcpmediaengine.com/support"
+  },
+  "contact": {
+    "email": "hello@mcpmediaengine.com",
+    "url": "https://mcpmediaengine.com/contact"
+  },
+  "billing": {
+    "email": "billing@mcpmediaengine.com",
+    "url": "https://mcpmediaengine.com/billing"
+  }
+}

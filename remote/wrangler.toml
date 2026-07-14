@@ -1,0 +1,9 @@
+name = "mediaengine-mcp"
+main = "src/index.ts"
+compatibility_date = "2024-12-19"
+compatibility_flags = ["nodejs_compat"]
+account_id = "1a015dff350bce8d8ad000c69aafc5fa"
+
+routes = [
+  { pattern = "mcp.mcpmediaengine.com", custom_domain = true }
+]
